@@ -2858,7 +2858,7 @@ TENSOR_IMPLEMENT_LOGICAL(ne,!=)
     } else {  \
       TH_TENSOR_APPLY2(real, r_, real, t, *r__data = CFUNC(*t_data);); \
     } \
-  }                                                           \
+  }
 
 #if defined(TH_REAL_IS_LONG)
 LAB_IMPLEMENT_BASIC_FUNCTION(abs,labs)
@@ -2923,6 +2923,12 @@ LAB_IMPLEMENT_BASIC_FUNCTION(cinv, TH_MATH_NAME(1.0) / )
 
 void THTensor_(pow)(THTensor *r_, THTensor *t, real value)
 {
+#define APPLY_MAYBE_CONTIGUOUS(FORMULA)                                        \
+    if (THTensor_(isContiguous)(r_) && THTensor_(isContiguous)(t)) {           \
+      TH_TENSOR_APPLY2_CONTIG(real, r_, real, t, FORMULA);                     \
+    } else {                                                                   \
+      TH_TENSOR_APPLY2(real, r_, real, t, FORMULA);                            \
+    }
   THTensor_(resizeAs)(r_, t);
   if(value == 1){
     THTensor_(copy)(r_, t);
@@ -2931,7 +2937,7 @@ void THTensor_(pow)(THTensor *r_, THTensor *t, real value)
     THTensor_(cmul)(r_, t, t);
   }
   else if(value == 3){
-    TH_TENSOR_APPLY2(real, t, real, r_, *r__data = *t_data * *t_data * *t_data;);
+    APPLY_MAYBE_CONTIGUOUS(*r__data = *t_data * *t_data * *t_data;);
   }
   else if(value == 0.5){
     THTensor_(sqrt)(r_, t);
@@ -2943,11 +2949,12 @@ void THTensor_(pow)(THTensor *r_, THTensor *t, real value)
     THTensor_(cinv)(r_, t);
   }
   else if(value == -2){
-    TH_TENSOR_APPLY2(real, t, real, r_, *r__data = TH_MATH_NAME(1.0) / (*t_data * *t_data););
+    APPLY_MAYBE_CONTIGUOUS(*r__data = TH_MATH_NAME(1.0) / (*t_data * *t_data););
   }
   else{
-    TH_TENSOR_APPLY2(real, t, real, r_, *r__data = TH_MATH_NAME(pow)(*t_data, value););
+    APPLY_MAYBE_CONTIGUOUS(*r__data = TH_MATH_NAME(pow)(*t_data, value););
   }
+#undef APPLY_MAYBE_CONTIGUOUS
 }
 
 void THTensor_(atan2)(THTensor *r_, THTensor *tx, THTensor *ty)

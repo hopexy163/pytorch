@@ -12,6 +12,25 @@ def _get_output(ctx, arg, inplace=False):
     else:
         return arg.new().resize_as_(arg)
 
+class Mm(InplaceFunction):
+
+    @staticmethod
+    def forward(ctx, matrix1, matrix2):
+        ctx.save_for_backward(matrix1, matrix2)
+        return torch.mm(matrix1, matrix2)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        matrix1, matrix2 = ctx.saved_variables
+        grad_matrix1 = grad_matrix2 = None
+
+        if ctx.needs_input_grad[0]:
+            grad_matrix1 = torch.mm(grad_output, matrix2.t())
+
+        if ctx.needs_input_grad[1]:
+            grad_matrix2 = torch.mm(matrix1.t(), grad_output)
+
+        return grad_matrix1, grad_matrix2
 
 class Addmm(InplaceFunction):
 

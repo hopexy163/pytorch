@@ -583,8 +583,12 @@ class Variable(_C._VariableBase):
         return self._static_blas(cls, (self,) + args, inplace)
 
     def mm(self, matrix):
-        output = Variable(self.data.new(self.data.size(0), matrix.data.size(1)))
-        return Addmm.apply(output, self, matrix, 0, 1, True)
+        if self.data.is_sparse:
+            assert matrix.data.is_sparse is False
+            return Mm.apply(self, matrix)
+        else:
+            output = Variable(self.data.new(self.data.size(0), matrix.data.size(1)))
+            return Addmm.apply(output, self, matrix, 0, 1, True)
 
     def bmm(self, batch):
         output = Variable(self.data.new(self.data.size(0), self.data.size(1),
